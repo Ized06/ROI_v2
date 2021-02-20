@@ -13,7 +13,7 @@ import torch.utils.data as data
 sys.path.insert(0, '../../../')
 import config as cfg
 import utils as utl
-from datasets import GCNDataLayer_original as DataLayer
+from datasets import GCNDataLayer as DataLayer
 from models.gcn import GCN as Model
 import pdb
 
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     parser.add_argument('--gpu', default='0, 1', type=str)
     parser.add_argument('--epochs', default=20, type=int)
     parser.add_argument('--batch_size', default=16, type=int)
-    parser.add_argument('--lr', default=1e-04, type=float)
+    parser.add_argument('--lr', default=2e-04, type=float)
     parser.add_argument('--weight_decay', default=5e-04, type=float)
     parser.add_argument('--num_workers', default=4, type=int)
     parser.add_argument('--time_steps', default=3, type=int)
@@ -52,19 +52,19 @@ if __name__ == '__main__':
     model = Model(args.inputs, args.time_steps, partialConv = args.partial_conv, fusion = args.fusion)
     model.loadmodel(url)
 
-    # pretrained_model_path = '/home/zxiao/project/risk_object_identification_original/train/HDD/gcn/snapshots/crossing_vehicle/2020-11-11_184943_w_dataAug_avg/inputs-camera-epoch-2.pth'
-    # print("Loading checkpoints from : {}".format(pretrained_model_path))
-    # checkpoint = torch.load(pretrained_model_path, map_location=torch.device('cpu'))
-    # model.load_state_dict(checkpoint,strict=False)
+    pretrained_model_path = '/home/zxiao/project/risk_object_identification_original/train/HDD/gcn/snapshots/crossing_vehicle/2020-11-11_184943_w_dataAug_avg/inputs-camera-epoch-2.pth'
+    print("Loading checkpoints from : {}".format(pretrained_model_path))
+    checkpoint = torch.load(pretrained_model_path, map_location=torch.device('cpu'))
     model = nn.DataParallel(model)
+    model.load_state_dict(checkpoint,strict=False)
     model = model.to(device)
     print("Model Parameters:", count_parameters(model))
-    # print("freeze all except fc_emb")
-    # for param in model.parameters():
-    #     param.requires_grad = False
-    # model.module.fc_emb_1.weight.requires_grad = True
-    # model.module.fc_emb_2.weight.requires_grad = True
-    # model.module.fc_emb_2.bias.requires_grad = True
+    print("freeze all except fc_emb")
+    for param in model.parameters():
+        param.requires_grad = False
+    model.module.fc_emb_1.weight.requires_grad = True
+    model.module.fc_emb_2.weight.requires_grad = True
+    model.module.fc_emb_2.bias.requires_grad = True
 
 
     softmax = nn.Softmax(dim=1).to(device)
@@ -96,10 +96,10 @@ if __name__ == '__main__':
 for epoch in range(1, args.epochs+1):
         data_sets = {
             phase: DataLayer(
-                # args = args,
+                args = args,
                 data_root=args.data_root,
                 cause=args.cause,
-                # phase=phase,
+                phase=phase,
                 sessions=getattr(args, phase+'_session_set'),
                 camera_transforms = camera_transforms,
                 time_steps=args.time_steps,

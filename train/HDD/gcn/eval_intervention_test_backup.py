@@ -154,7 +154,6 @@ if __name__ == '__main__':
     threshHolds = np.arange(0.5, 1.0, 0.05)
     vis_save_path = './vis/'+args.cause
     result_dict = {}
-    visualization_dict = {}
     if not os.path.isdir(vis_save_path):
         os.makedirs(vis_save_path)
 
@@ -167,16 +166,7 @@ if __name__ == '__main__':
             center_y = float(center_y)
             w = float(w)
             h = float(h)
-            file_path = os.path.join(folder,'output{}.png'.format(frame_id))
-            sample_dict = {}
-            gt = [center_x, center_y, w, h]
-            width = 1280
-            height = 720
-            gt_x1 = (gt[0]-0.5*gt[2])*width
-            gt_x2 = (gt[0]+0.5*gt[2])*width
-            gt_y1 = (gt[1]-0.5*gt[3])*height
-            gt_y2 = (gt[1]+0.5*gt[3])*height
-            sample_dict['gt'] = [gt_x1,gt_y1,gt_x2,gt_y2]
+
             tracking_results = np.loadtxt(os.path.join(args.data_root, 'tracking', args.cause, 'refined_results', folder + '.txt'),delimiter=',')
 
             start_time = int(folder.split('_')[-2])
@@ -192,8 +182,6 @@ if __name__ == '__main__':
             normalized_trackers = torch.from_numpy(normalized_trackers.astype(np.float32)).to(device)
             normalized_trackers = normalized_trackers.unsqueeze(0)
             num_box = len(trackers[0])
-            sample_dict['all_bboxes'] = trackers[-1,].tolist()
-            sample_dict['num_box'] = num_box
 
             camera_inputs = []
             action_logits = []
@@ -304,11 +292,9 @@ if __name__ == '__main__':
                 vel = model.vel_classifier(model.drop(updated_feature))
                 action_logits.append(softmax(vel).to('cpu').numpy()[0])  # Nx2
                 # print(session, start, end, i, trackers[:,i ], action_logits[i])
+            pdb.set_trace()
             if action_logits:
                 cause_object_id = np.argmax(np.array(action_logits)[:, 0])
-                sample_dict['score'] = np.array(action_logits)[:, 0].tolist()
-                sample_dict['cause_object_id'] = int(cause_object_id)
-                visualization_dict[file_path] = sample_dict
                 #print(session, st, et, cause_object_id, trackers[:, cause_object_id],
                       #action_logits[cause_object_id])
 
@@ -366,9 +352,6 @@ if __name__ == '__main__':
     metric_save_dir = os.path.join(dir_name,'ROI_metric')
     if not os.path.exists(metric_save_dir):
         os.makedirs(metric_save_dir)
-    vis_info_save_dir = os.path.join(dir_name,'vis_info')
-    if not os.path.exists(vis_info_save_dir):
-        os.makedirs(vis_info_save_dir)    
     json_save_name = model_basename.replace('.pth','.json')
     json_file_path = os.path.join(json_save_dir,args.cause+ '_'+ json_save_name)
     with open(json_file_path, 'w') as f:
@@ -379,10 +362,6 @@ if __name__ == '__main__':
     with open(metric_file_path, 'w') as f:
         json.dump([Acc_5,Acc_75,mAcc], f,indent= 4)
 
-    vis_info_save_name = model_basename.replace('.pth','.json')
-    vis_info_file_path = os.path.join(vis_info_save_dir,args.cause+ '_'+ vis_info_save_name)
-    with open(vis_info_file_path, 'w') as f:
-        json.dump(visualization_dict, f,indent= 4)
 # json_file_path = '/home/cli/sm120145_desktop/driving_model/scripts/json/'+args.cause
 # if not os.path.isdir(json_file_path):
 #     os.makedirs(json_file_path)
