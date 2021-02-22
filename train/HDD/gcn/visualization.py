@@ -8,7 +8,7 @@ import cv2
 import json
 import argparse
 import pdb
-
+from scipy.io import loadmat
 
 
 image_root = '/home/zxiao/data/ROI/roi_test'
@@ -52,6 +52,7 @@ def main():
         print(pred_and_score_file)
         original_image_path = os.path.join(image_root,image_file_name)
         visualizae_gt_and_pred(original_image_path,image_info,gt_and_pred_file)
+        visualize_pred_and_score(original_image_path,image_info,pred_and_score_dir)
 
 def visualizae_gt_and_pred(input_image_path,info_dict,save_path):
     image = cv2.imread(input_image_path)
@@ -63,5 +64,44 @@ def visualizae_gt_and_pred(input_image_path,info_dict,save_path):
     cv2.rectangle(image, (int(gt[0]), int(gt[1])), (int(gt[2]), int(gt[3])), (0, 0, 255), 8)
     cv2.rectangle(image, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (0, 255, 0), 3 )
     cv2.imwrite(save_path,image)
+
+def visualize_pred_and_score(input_image_path,info_dict,save_dir):
+
+    image_name = os.path.basename(input_image_path)
+    pred_dir = os.path.join(save_dir,'pred')
+    score_dir = os.path.join(save_dir,'score')
+    if not os.path.exists(pred_dir):
+        os.makedirs(pred_dir)
+    if not os.path.exists(score_dir):
+        os.makedirs(score_dir)
+
+    colors = loadmat('/home/zxiao/project/semantic-segmentation-pytorch/data/color150.mat')['colors']
+    image = cv2.imread(input_image_path)
+    num_box = info_dict['num_box']
+    score = info_dict['score']
+    risk_object_id = np.argmax(score)
+    box = info_dict['all_bboxes']
+    confidence_go = info_dict['confidence_go']
+    # save pred
+    for i in range(num_box):
+        box = info_dict['all_bboxes'][i]
+        r,g,b = colors[i]
+        cv2.rectangle(image, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (int(b), int(g), int(r)), 2 )
+    cv2.imwrite(os.path.join(pred_dir,image_name.replace('.png','.jpg')),image)
+
+    # save score
+    color_tuples = [(float(r/255),float(g/255),float(b/255)) for r,g,b in colors]
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    data = [5, 20, 15, 25, 10]
+
+    ax.bar(range(len(score)), score,color = color_tuples[:num_box])
+    ax.axhline(confidence_go,0,len(score),color = 'k')
+    ax.set_ylim([0,1.0])
+    ax.set_xticks([])
+    ax.set_title('Risk Score')
+    ax.set_xlabel('Object')
+    fig.savefig(os.path.join(score_dir,image_name.replace('.png','.jpg')))
+    plt.close(fig)
 if __name__ == '__main__':
     main()

@@ -238,6 +238,7 @@ if __name__ == '__main__':
             updated_feature = model.message_passing(hx, normalized_trackers)  # BxH
             vel = model.vel_classifier(model.drop(updated_feature))
             confidence_go = softmax(vel).to('cpu').numpy()[0][0]
+            sample_dict['confidence_go'] = float(confidence_go)
             #print(session, st, et, 'original', softmax(vel).to('cpu').numpy()[0])
 
             # with intervention
