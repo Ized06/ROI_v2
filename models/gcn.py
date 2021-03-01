@@ -226,7 +226,7 @@ class GCN(nn.Module):
             fusion_feature = torch.sum(fusion_feature, 1)
             # updated_fusion : (B, 2*H)
             fusion_feature = torch.cat((ori_ego_feature, fusion_feature), 1)
-            return fusion_feature  ,attn_weights
+            return fusion_feature  #,attn_weights
 
 
         else:

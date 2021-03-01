@@ -1,5 +1,5 @@
-CAUSE=crossing_vehicle
-EXPERIMENT_NAME=2021-2-16_083214_w_dataAug_attn_re_implemented_baseline
+CAUSE=crossing_pedestrian
+EXPERIMENT_NAME=2021-2-6_054709_w_dataAug_attn_baseline_reimplemented_implementation
 EPOCH=7
 
 
